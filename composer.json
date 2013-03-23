@@ -1,0 +1,19 @@
+{
+    "name": "jsebrech/o-demo",
+    "description": "Todo app that demoes O-syntax for PHP",
+    "authors": [
+        {
+            "name": "Joeri Sebrechts",
+            "email": "joeri@sebrechts.net"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/jsebrech/php-o"
+        }
+    ],
+    "require": {
+        "jsebrech/o": "dev-master"
+    }
+}
