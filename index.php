@@ -1,4 +1,8 @@
-<?php namespace O; include "vendor/jsebrech/o/O.php";
+<?php
+
+namespace O;
+include "vendor/autoload.php";
+O::init();
 
 $session = new Session();
 
