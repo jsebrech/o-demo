@@ -4,6 +4,8 @@ namespace O;
 include "vendor/autoload.php";
 O::init();
 
+include("models/TodoItem.php");
+
 $session = new Session();
 
 if (!is_array($session->items)) {
@@ -18,18 +20,21 @@ if (!is_array($session->items)) {
 $errorMsg = "";
 
 if ($session->isCSRFProtected()) {
+
   // list of ids of submitted items
-  $ids = ca($_REQUEST)->keys()->filter(
-    function($key) { return s($key)->pos("item-") === 0; })->map(
-    function($key) { return s($key)->substr(5); })->raw();
+  $ids = ca($_REQUEST)->keys()
+    ->filter(function($key) { return s($key)->pos("item-") === 0; })
+       ->map(function($key) { return s($key)->substr(5); });
 
   // read the submitted items and delete / update
   foreach ($ids as $id) {
+
     $item = o(array(
       "id" => $id,
       "message" => isset($_REQUEST["message-".$id]) ? $_REQUEST["message-".$id] : "",
       "completed" => isset($_REQUEST["completed-".$id]) ? $_REQUEST["completed-".$id] : FALSE
     ))->cast("TodoItem");
+
     // if item should be deleted
     if (s($item->message)->trim() == "") {
       $session->items = a($session->items)->filter(
@@ -37,9 +42,8 @@ if ($session->isCSRFProtected()) {
       );
     // if item should be updated
     } else {
-      $errors = Validator::validate($item);
-      // save to session if valid
-      if (count($errors) == 0) {
+      if (o($item)->validate($errors)) {
+        // save to session if valid
         foreach ($session->items as $i => $stored) {
           if ($stored->id === $item->id) {
             $session->items[$i] = $item;
@@ -50,7 +54,8 @@ if ($session->isCSRFProtected()) {
       };
     };
   };
-  // add an item if needed
+
+  // if an item should be added
   if (isset($_REQUEST["action-add"])) {
     $item = o(array(
       "id" => TodoItem::nextId(),
@@ -63,9 +68,11 @@ if ($session->isCSRFProtected()) {
       $session->items[] = $item;
     } else {
       $errorMsg = $errors[0]->message;
-    };  
-  // delete all the completed items
-  } else if (isset($_REQUEST["action-clear-completed"])) {
+    };
+  };
+
+  // if the completed items should be deleted
+  if (isset($_REQUEST["action-clear-completed"])) {
     $session->items = a($session->items)->filter(
       function($o) { return !$o->completed; }
     );
@@ -79,31 +86,4 @@ $todoCount = count($session->items) - $completedCount;
 
 o(compact(
   "session", "errorMsg", "completedCount", "todoCount"
-))->render("html/main.phtml");
-
-exit;
-
-class TodoItem {
-  /** 
-   * @var int 
-   */
-  public $id = -1;
-  /** 
-   * @var string 
-   * @Size(max=200)
-   * @NotEmpty
-   */
-  public $message = "";
-  /** 
-   * @var bool 
-   */
-  public $completed = FALSE;
-  
-  public static function nextId() {
-    $session = new Session();
-    if (!isset($session->nextItemID)) {
-      $session->nextItemID = 0;
-    };
-    return $session->nextItemID++;
-  }
-}
+))->render("views/main.phtml");
